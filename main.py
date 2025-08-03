@@ -3,10 +3,10 @@ import cv2
 from tkinter import Tk, filedialog
 import re
 import os
-import csv
 import math
+import pandas as pd
 
-# Ajusta esta ruta si tu instalación de Tesseract está en otra carpeta
+# Ajusta esta ruta si tu instalación de Tesseract está en otro lugar
 pytesseract.pytesseract.tesseract_cmd = (
     r'C:\Users\LojanoE\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
 )
@@ -25,10 +25,10 @@ def extraer_datos(texto):
 
     # 1) Extraer N, E, Elevation, Stn
     patrones = {
-        'N':         r'N\s*[:=]?\s*(\d+\.\d+)',
-        'E':         r'E\s*[:=]?\s*(\d+\.\d+)',
-        'Elevation': r'Elevation\s*[:=]?\s*(\d+\.\d+)',
-        'Stn':       r'Stn[:=]?\s*([A-Za-z0-9\+\-\.]+)'
+        'N':        r'N\s*[:=]?\s*(\d+\.\d+)',
+        'E':        r'E\s*[:=]?\s*(\d+\.\d+)',
+        'Elevation':r'Elevation\s*[:=]?\s*(\d+\.\d+)',
+        'Stn':      r'Stn[:=]?\s*([A-Za-z0-9\+\-\.]+)'
     }
     for k, p in patrones.items():
         m = re.search(p, texto)
@@ -36,8 +36,7 @@ def extraer_datos(texto):
             datos[k] = m.group(1).strip()
 
     # 2) Extraer Nombre Punto y Código desde la línea que contiene 'STK_'
-    lines = texto.splitlines()
-    for line in lines:
+    for line in texto.splitlines():
         if 'STK_' in line:
             parts = line.strip().split()
             datos['Nombre Punto'] = parts[0]
@@ -45,8 +44,9 @@ def extraer_datos(texto):
                 datos['Código'] = ' '.join(parts[1:])
             break
 
-    # 3) Si Código sigue sin detectarse, buscar encabezado "Código" o "Cédigo"
+    # 3) Si Código sigue sin detectarse, buscar encabezado "Código"
     if datos['Código'] == 'NO ENCONTRADO':
+        lines = texto.splitlines()
         for i, line in enumerate(lines):
             if re.search(r'(Código|C[eé]digo)', line, re.IGNORECASE):
                 if i + 1 < len(lines):
@@ -88,7 +88,6 @@ def extraer_datos(texto):
         km_int = int(km_str)
         m_f = float(m_str)
         total = (abs(km_int) * 100 + m_f) if km_int >= 0 else -(abs(km_int) * 100 + m_f)
-        # truncar total a 2 decimales
         total_trunc = math.floor(total * 100) / 100
         datos['ABS'] = f"{total_trunc:.2f}"
 
@@ -108,7 +107,7 @@ def procesar_imagen(ruta):
 
 def main():
     rutas = seleccionar_imagenes()
-    resultados = []
+    registros = []
 
     for ruta in rutas:
         datos = procesar_imagen(ruta)
@@ -122,27 +121,20 @@ def main():
         print(f"STK: {datos['STK']}")
         print(f"ABS: {datos['ABS']}")
 
-        resultados.append([
-            datos['N'],
-            datos['E'],
-            datos['Elevation'],
-            datos['ABS'],
-            datos['Código'],
-            datos['Nombre Punto'],
-            datos['STK'],
-            datos['Stn']
-        ])
+        registros.append(datos)
 
-    # Exportar a CSV
-    with open("datos_extraidos.csv", "w", newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            'N', 'E', 'Elevation', 'ABS',
-            'Código', 'Nombre Punto', 'STK', 'Stn'
-        ])
-        writer.writerows(resultados)
+    # Crear DataFrame y exportar a Excel
+    df = pd.DataFrame(registros, columns=[
+        'N', 'E', 'Elevation', 'Stn',
+        'Nombre Punto', 'Código', 'STK', 'ABS'
+    ])
+    output_path = "datos_extraidos.xlsx"
+    df.to_excel(output_path, index=False)
 
-    print("\n✅ Datos exportados a 'datos_extraidos.csv'")
+    # Abrir el archivo Excel automáticamente (Windows)
+    os.startfile(output_path)
+
+    print(f"\n✅ Datos exportados y abierto en '{output_path}'")
 
 if __name__ == "__main__":
     main()
