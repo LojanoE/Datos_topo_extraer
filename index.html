@@ -1,0 +1,35 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR de Coordenadas</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    input, button { margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>OCR de Coordenadas</h1>
+  <input type="file" id="files" accept="image/*" multiple>
+  <button id="procesar">Procesar y descargar Excel</button>
+  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Archivo</th><th>N</th><th>E</th><th>Elevation</th><th>Stn</th>
+        <th>Nombre Punto</th><th>Código</th><th>STK</th><th>ABS</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Librerías externas -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- Lógica de la aplicación -->
+  <script src="main.js"></script>
+</body>
+</html>
