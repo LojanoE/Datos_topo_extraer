@@ -84,7 +84,7 @@ async function procesar() {
 
     // Mostrar en tabla HTML
     const tr = document.createElement('tr');
-    ['Archivo','N','E','Elevation','Stn','Nombre Punto','Código','STK','ABS'].forEach(campo => {
+    ['Archivo','N','E','Elevation','ABS','Nombre Punto','Código','STK','Stn'].forEach(campo => {
       const td = document.createElement('td');
       td.textContent = filas[filas.length - 1][campo];
       tr.appendChild(td);
