@@ -82,9 +82,9 @@ async function procesar() {
     const d = extraerDatos(text);
     filas.push({ Archivo: file.name, ...d });
 
-    // Mostrar en tabla HTML
+    // Mostrar en tabla HTML en nuevo orden
     const tr = document.createElement('tr');
-    ['Archivo','N','E','Elevation','ABS','Nombre Punto','Código','STK','Stn'].forEach(campo => {
+    ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'].forEach(campo => {
       const td = document.createElement('td');
       td.textContent = filas[filas.length - 1][campo];
       tr.appendChild(td);
@@ -92,8 +92,8 @@ async function procesar() {
     cuerpo.appendChild(tr);
   }
 
-  // Generar y descargar Excel con SheetJS
-  const ws = XLSX.utils.json_to_sheet(filas);
+  // Generar y descargar Excel con SheetJS y encabezados en orden
+  const ws = XLSX.utils.json_to_sheet(filas, { header: ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'] });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Coordenadas');
   XLSX.writeFile(wb, 'datos_extraidos.xlsx');
