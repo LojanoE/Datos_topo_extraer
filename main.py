@@ -125,8 +125,8 @@ def main():
 
     # Crear DataFrame y exportar a Excel
     df = pd.DataFrame(registros, columns=[
-        'N', 'E', 'Elevation', 'Stn',
-        'Nombre Punto', 'Código', 'STK', 'ABS'
+        'N', 'E', 'Elevation', 'ABS',
+        'Nombre Punto', 'Código', 'STK', 'Stn'
     ])
     output_path = "datos_extraidos.xlsx"
     df.to_excel(output_path, index=False)
