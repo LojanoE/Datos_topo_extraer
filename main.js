@@ -1,3 +1,4 @@
+
 // OCR y parseo de coordenadas en JavaScript
 function extraerDatos(texto) {
   const datos = {
