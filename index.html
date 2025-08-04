@@ -1,42 +1,130 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OCR de Coordenadas</title>
+  <title>Extractor de Coordenadas</title>
+  <!-- Tesseract.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
-    input, button { margin-top: 0.5rem; }
+    th { background: #f5f5f5; }
+    button { padding: 0.5rem 1rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <h1>OCR de Coordenadas</h1>
-  <input type="file" id="files" accept="image/*" multiple>
-  <button id="procesar">Procesar y descargar Excel</button>
-  <table id="tabla">
+  <h1>Extractor de Coordenadas desde Imágenes</h1>
+  <input type="file" id="fileInput" accept="image/*" multiple />
+  <button id="processBtn">Procesar Imágenes</button>
+  <button id="downloadBtn" disabled>Descargar CSV</button>
+  <div id="status"></div>
+  <table id="resultsTable">
     <thead>
       <tr>
         <th>Archivo</th>
         <th>N</th>
         <th>E</th>
         <th>Elevation</th>
-        <th>ABS</th>
         <th>Stn</th>
         <th>Nombre Punto</th>
         <th>Código</th>
         <th>STK</th>
+        <th>ABS</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <!-- Librerías externas -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <!-- Lógica de la aplicación -->
-  <script src="main.js"></script>
+  <script>
+    const patterns = {
+      N: /N\s*[:=]?\s*(\d+\.\d+)/i,
+      E: /E\s*[:=]?\s*(\d+\.\d+)/i,
+      Elevation: /Elevation\s*[:=]?\s*(\d+\.\d+)/i,
+      Stn: /Stn[:=]?\s*([A-Za-z0-9\+\-\.]+)/i
+    };
+
+    function truncar(val) {
+      const f = parseFloat(val);
+      if (isNaN(f)) return val;
+      return (Math.floor(f * 100) / 100).toFixed(2);
+    }
+
+    function extractData(text) {
+      const datos = { N: 'NO ENCONTRADO', E: 'NO ENCONTRADO', Elevation: 'NO ENCONTRADO', Stn: 'NO ENCONTRADO', 'Nombre Punto': 'NO ENCONTRADO', Código: 'NO ENCONTRADO', STK: 'NO ENCONTRADO', ABS: 'NO ENCONTRADO' };
+      // patrones básicos
+      Object.keys(patterns).forEach(key => {
+        const m = text.match(patterns[key]);
+        if (m) datos[key] = truncar(m[1]);
+      });
+      // STK_
+      text.split(/\r?\n/).forEach(line => {
+        if (line.includes('STK_')) {
+          const parts = line.trim().split(/\s+/);
+          datos['Nombre Punto'] = parts[0];
+          if (parts.length > 1) datos['Código'] = parts.slice(1).join(' ');
+        }
+      });
+      if (datos['STK'] === 'NO ENCONTRADO') {
+        datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
+      }
+      // ABS
+      const m_abs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
+      if (m_abs) {
+        const km = parseInt(m_abs[1], 10);
+        const m = parseFloat(m_abs[2]);
+        const total = (Math.abs(km) * 100 + m) * (km >= 0 ? 1 : -1);
+        datos.ABS = (Math.floor(total * 100) / 100).toFixed(2);
+      }
+      return datos;
+    }
+
+    async function processFiles(files) {
+      const results = [];
+      for (let file of files) {
+        document.getElementById('status').innerText = `Procesando ${file.name}...`;
+        const { data: { text } } = await Tesseract.recognize(file, 'spa');
+        const datos = extractData(text);
+        datos.archivo = file.name;
+        results.push(datos);
+        appendRow(datos);
+      }
+      document.getElementById('status').innerText = 'Procesamiento completado.';
+      document.getElementById('downloadBtn').disabled = false;
+      return results;
+    }
+
+    function appendRow(datos) {
+      const tbody = document.querySelector('#resultsTable tbody');
+      const tr = document.createElement('tr');
+      ['archivo','N','E','Elevation','Stn','Nombre Punto','Código','STK','ABS'].forEach(key => {
+        const td = document.createElement('td');
+        td.innerText = datos[key] || '';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+
+    function downloadCSV() {
+      const rows = Array.from(document.querySelectorAll('#resultsTable tr'))
+        .map(tr => Array.from(tr.querySelectorAll('th,td')).map(cell => `"${cell.innerText}"`).join(','));
+      const csv = rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'datos_extraidos.csv';
+      link.click();
+    }
+
+    document.getElementById('processBtn').addEventListener('click', () => {
+      const files = document.getElementById('fileInput').files;
+      if (files.length === 0) return alert('Selecciona al menos una imagen');
+      processFiles(files);
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+  </script>
 </body>
 </html>
