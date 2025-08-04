@@ -6,6 +6,8 @@
   <title>Extractor de Coordenadas</title>
   <!-- Tesseract.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
     h1 { text-align: center; }
@@ -19,7 +21,7 @@
   <h1>Extractor de Coordenadas desde Imágenes</h1>
   <input type="file" id="fileInput" accept="image/*" multiple />
   <button id="processBtn">Procesar Imágenes</button>
-  <button id="downloadBtn" disabled>Descargar excel</button>
+  <button id="downloadBtn" disabled>Descargar Excel</button>
   <div id="status"></div>
   <table id="resultsTable">
     <thead>
@@ -46,6 +48,8 @@
       Stn: /Stn[:=]?\s*([A-Za-z0-9\+\-\.]+)/i
     };
 
+    let resultsGlobal = [];
+
     function truncar(val) {
       const f = parseFloat(val);
       if (isNaN(f)) return val;
@@ -53,13 +57,11 @@
     }
 
     function extractData(text) {
-      const datos = { N: 'NO ENCONTRADO', E: 'NO ENCONTRADO', Elevation: 'NO ENCONTRADO', Stn: 'NO ENCONTRADO', 'Nombre Punto': 'NO ENCONTRADO', Código: 'NO ENCONTRADO', STK: 'NO ENCONTRADO', ABS: 'NO ENCONTRADO' };
-      // patrones básicos
+      const datos = { Archivo: '', N: 'NO ENCONTRADO', E: 'NO ENCONTRADO', Elevation: 'NO ENCONTRADO', Stn: 'NO ENCONTRADO', 'Nombre Punto': 'NO ENCONTRADO', Código: 'NO ENCONTRADO', STK: 'NO ENCONTRADO', ABS: 'NO ENCONTRADO' };
       Object.keys(patterns).forEach(key => {
         const m = text.match(patterns[key]);
         if (m) datos[key] = truncar(m[1]);
       });
-      // STK_
       text.split(/\r?\n/).forEach(line => {
         if (line.includes('STK_')) {
           const parts = line.trim().split(/\s+/);
@@ -70,7 +72,6 @@
       if (datos['STK'] === 'NO ENCONTRADO') {
         datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
       }
-      // ABS
       const m_abs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
       if (m_abs) {
         const km = parseInt(m_abs[1], 10);
@@ -82,24 +83,23 @@
     }
 
     async function processFiles(files) {
-      const results = [];
+      resultsGlobal = [];
       for (let file of files) {
         document.getElementById('status').innerText = `Procesando ${file.name}...`;
         const { data: { text } } = await Tesseract.recognize(file, 'spa');
         const datos = extractData(text);
-        datos.archivo = file.name;
-        results.push(datos);
+        datos.Archivo = file.name;
+        resultsGlobal.push(datos);
         appendRow(datos);
       }
       document.getElementById('status').innerText = 'Procesamiento completado.';
       document.getElementById('downloadBtn').disabled = false;
-      return results;
     }
 
     function appendRow(datos) {
       const tbody = document.querySelector('#resultsTable tbody');
       const tr = document.createElement('tr');
-      ['archivo','N','E','Elevation','ABS','Nombre Punto','Código','STK','Stn'].forEach(key => {
+      ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'].forEach(key => {
         const td = document.createElement('td');
         td.innerText = datos[key] || '';
         tr.appendChild(td);
