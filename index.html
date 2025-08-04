@@ -19,7 +19,7 @@
   <h1>Extractor de Coordenadas desde Imágenes</h1>
   <input type="file" id="fileInput" accept="image/*" multiple />
   <button id="processBtn">Procesar Imágenes</button>
-  <button id="downloadBtn" disabled>Descargar CSV</button>
+  <button id="downloadBtn" disabled>Descargar excel</button>
   <div id="status"></div>
   <table id="resultsTable">
     <thead>
@@ -107,15 +107,11 @@
       tbody.appendChild(tr);
     }
 
-    function downloadCSV() {
-      const rows = Array.from(document.querySelectorAll('#resultsTable tr'))
-        .map(tr => Array.from(tr.querySelectorAll('th,td')).map(cell => `"${cell.innerText}"`).join(','));
-      const csv = rows.join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'datos_extraidos.csv';
-      link.click();
+    function downloadExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(resultsGlobal);
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+      XLSX.writeFile(wb, 'datos_extraidos.xlsx');
     }
 
     document.getElementById('processBtn').addEventListener('click', () => {
@@ -124,7 +120,7 @@
       processFiles(files);
     });
 
-    document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+    document.getElementById('downloadBtn').addEventListener('click', downloadExcel);
   </script>
 </body>
 </html>
