@@ -28,11 +28,11 @@
         <th>N</th>
         <th>E</th>
         <th>Elevation</th>
+        <th>ABS</th>
         <th>Stn</th>
         <th>Nombre Punto</th>
         <th>Código</th>
         <th>STK</th>
-        <th>ABS</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -99,7 +99,7 @@
     function appendRow(datos) {
       const tbody = document.querySelector('#resultsTable tbody');
       const tr = document.createElement('tr');
-      ['archivo','N','E','Elevation','Stn','Nombre Punto','Código','STK','ABS'].forEach(key => {
+      ['archivo','N','E','Elevation','ABS','Nombre Punto','Código','STK','Stn'].forEach(key => {
         const td = document.createElement('td');
         td.innerText = datos[key] || '';
         tr.appendChild(td);
