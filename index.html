@@ -57,7 +57,7 @@
     }
 
     function extractData(text) {
-      const datos = { Archivo: '', N: 'NO ENCONTRADO', E: 'NO ENCONTRADO', Elevation: 'NO ENCONTRADO', Stn: 'NO ENCONTRADO', 'Nombre Punto': 'NO ENCONTRADO', Código: 'NO ENCONTRADO', STK: 'NO ENCONTRADO', ABS: 'NO ENCONTRADO' };
+      const datos = { Archivo: '', N: 'NO ENCONTRADO', E: 'NO ENCONTRADO', Elevation: 'NO ENCONTRADO',  ABS: 'NO ENCONTRADO' , 'Nombre Punto': 'NO ENCONTRADO', Código: 'NO ENCONTRADO', STK: 'NO ENCONTRADO', Stn: 'NO ENCONTRADO' };
       Object.keys(patterns).forEach(key => {
         const m = text.match(patterns[key]);
         if (m) datos[key] = truncar(m[1]);
