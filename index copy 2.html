@@ -12,10 +12,8 @@
 
   <!-- Tesseract.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-  <!-- SheetJS para exportar a Excel -->
+  <!-- SheetJS for Excel export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <!-- SortableJS para drag-and-drop -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
   <style>
     :root {
@@ -27,7 +25,9 @@
       --radio: 6px;
       --shadow: 0 8px 24px rgba(15, 61, 84, 0.08);
     }
+
     * { box-sizing: border-box; }
+
     body {
       font-family: var(--font-sans);
       color: var(--texto);
@@ -39,58 +39,133 @@
       margin-right: auto;
       line-height: 1.4;
     }
+
     header {
-      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
       margin-bottom: 1.25rem;
     }
-    .logo { max-height: 70px; width: auto; flex-shrink: 0; }
-    .title-block { display: flex; flex-direction: column; gap: 4px; }
+
+    .logo {
+      max-height: 70px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
     .title-main {
-      display: flex; align-items: center; gap: 10px; margin: 0;
-      font-family: var(--font-heading); font-size: 1.9rem; font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-family: var(--font-heading);
+      font-size: 1.9rem;
+      font-weight: 700;
     }
+
     .badge {
-      background: var(--naranja-logo); padding: 4px 10px;
-      border-radius: 4px; color: #fff; font-size: 0.85rem;
-      font-weight: 600; display: inline-block;
+      background: var(--naranja-logo);
+      padding: 4px 10px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-block;
     }
-    .subtitle { font-size: 0.95rem; margin: 0; font-weight: 500; }
-    .controls { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+    .subtitle {
+      font-size: 0.95rem;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .controls {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
     input[type="file"] {
-      border: 1px solid #d1d5db; padding: 0.45rem 0.75rem;
-      border-radius: 5px; font-size: 0.9rem;
+      border: 1px solid #d1d5db;
+      padding: 0.45rem 0.75rem;
+      border-radius: 5px;
+      font-size: 0.9rem;
     }
+
     button {
-      cursor: pointer; border: none; border-radius: var(--radio);
-      padding: 0.55rem 1rem; font-size: 0.9rem; font-weight: 600;
-      font-family: var(--font-sans); transition: filter .15s;
-      box-shadow: var(--shadow); margin-right: .25rem;
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radio);
+      padding: 0.55rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      transition: filter .15s;
+      box-shadow: var(--shadow);
     }
-    #processBtn { background: var(--azul-logo); color: #fff; }
+
+    #processBtn {
+      background: var(--azul-logo);
+      color: #fff;
+    }
+
     #processBtn:hover { filter: brightness(1.05); }
+
     #downloadBtn {
-      background: #1f8f4b; color: #fff;
+      background: #1f8f4b;
+      color: #fff;
     }
+
     #downloadBtn:disabled {
-      opacity: 0.5; cursor: not-allowed;
+      opacity: 0.5;
+      cursor: not-allowed;
     }
-    #status { margin-top: 0.75rem; font-size: 0.9rem; font-weight: 500; }
+
+    #status {
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
     table {
-      width: 100%; border-collapse: collapse; margin-top: 1rem;
-      font-size: 0.85rem; background: #fff;
-      border-radius: 6px; overflow: hidden;
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      background: #fff;
+      border-radius: 6px;
+      overflow: hidden;
       box-shadow: 0 12px 32px rgba(15, 61, 84, 0.06);
     }
+
     th, td {
-      padding: 0.55rem 0.65rem; text-align: left;
+      padding: 0.55rem 0.65rem;
+      text-align: left;
       border-bottom: 1px solid #e5e7eb;
     }
-    thead { background: #f5f7fa; }
-    th {
-      font-weight: 600; position: sticky; top: 0;
+
+    thead {
+      background: #f5f7fa;
     }
-    tr:last-child td { border-bottom: none; }
-    tbody tr { cursor: grab; } /* indicador de que es arrastrable */
+
+    th {
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
     @media (max-width: 840px) {
       .title-main { font-size: 1.6rem; }
       header { gap: 0.5rem; }
@@ -189,104 +264,61 @@
 
     async function processFiles(files) {
       resultsGlobal = [];
-      document.querySelector('#resultsTable tbody').innerHTML = '';
-      document.getElementById('status').innerText = '';
+      const statusEl = document.getElementById('status');
       for (let file of files) {
-        document.getElementById('status').innerText = `Procesando ${file.name}...`;
+        statusEl.innerText = `Procesando ${file.name}...`;
         try {
           const { data: { text } } = await Tesseract.recognize(file, 'spa');
           const datos = extractData(text);
           datos.Archivo = file.name;
           resultsGlobal.push(datos);
           appendRow(datos);
-        } catch {
+        } catch (err) {
+          console.warn('Error procesando', file.name, err);
           appendRow({
             Archivo: file.name,
-            N: 'ERROR', E: 'ERROR', Elevation: 'ERROR',
-            ABS: 'ERROR', Stn: 'ERROR',
-            'Nombre Punto': 'ERROR', Código: 'ERROR', STK: 'ERROR'
+            N: 'ERROR',
+            E: 'ERROR',
+            Elevation: 'ERROR',
+            ABS: 'ERROR',
+            Stn: 'ERROR',
+            'Nombre Punto': 'ERROR',
+            Código: 'ERROR',
+            STK: 'ERROR'
           });
         }
       }
-      document.getElementById('status').innerText = 'Procesamiento completado.';
+      statusEl.innerText = 'Procesamiento completado.';
       document.getElementById('downloadBtn').disabled = false;
     }
 
     function appendRow(datos) {
       const tbody = document.querySelector('#resultsTable tbody');
       const tr = document.createElement('tr');
-      ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK']
-        .forEach(key => {
-          const td = document.createElement('td');
-          td.innerText = datos[key] || '';
-          tr.appendChild(td);
-        });
+      ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'].forEach(key => {
+        const td = document.createElement('td');
+        td.innerText = datos[key] || '';
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     }
 
-    // Inicializa SortableJS en el <tbody>
-    Sortable.create(document.querySelector('#resultsTable tbody'), {
-      animation: 150,
-      ghostClass: 'sortable-ghost',
-      onEnd: () => syncResultsGlobal()
-    });
-
-    function syncResultsGlobal() {
-      const filas = document.querySelectorAll('#resultsTable tbody tr');
-      resultsGlobal = Array.from(filas).map(tr => {
-        const c = tr.querySelectorAll('td');
-        return {
-          Archivo:   c[0].innerText,
-          N:         c[1].innerText,
-          E:         c[2].innerText,
-          Elevation: c[3].innerText,
-          ABS:       c[4].innerText,
-          Stn:       c[5].innerText,
-          'Nombre Punto': c[6].innerText,
-          Código:    c[7].innerText,
-          STK:       c[8].innerText
-        };
-      });
+    function downloadExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(resultsGlobal);
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+      XLSX.writeFile(wb, 'datos_extraidos.xlsx');
     }
 
-function downloadExcel() {
-  // 1) Asegúrate de que el array global está sincronizado
-  syncResultsGlobal();
+    document.getElementById('processBtn').addEventListener('click', () => {
+      const files = document.getElementById('fileInput').files;
+      if (files.length === 0) return alert('Selecciona al menos una imagen');
+      // limpiar tabla anterior
+      document.querySelector('#resultsTable tbody').innerHTML = '';
+      processFiles(files);
+    });
 
-  // 2) Mapea a un nuevo array donde N, E, Elevation y ABS sean números
-  const dataNumeric = resultsGlobal.map(r => ({
-    Archivo:       r.Archivo,
-    N:             parseFloat(r.N)         || null,
-    E:             parseFloat(r.E)         || null,
-    Elevation:     parseFloat(r.Elevation) || null,
-    ABS:           parseFloat(r.ABS)       || null,
-    Stn:           r.Stn,
-    'Nombre Punto': r['Nombre Punto'],
-    Código:        r.Código,
-    STK:           r.STK
-  }));
-
-  // 3) Genera la hoja pasando raw:true
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(dataNumeric, {
-    header: ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'],
-    raw: true
-  });
-  XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-
-  // 4) Escribe el archivo
-  XLSX.writeFile(wb, 'datos_extraidos.xlsx');
-}
-
-    document.getElementById('processBtn')
-      .addEventListener('click', () => {
-        const files = document.getElementById('fileInput').files;
-        if (!files.length) return alert('Selecciona al menos una imagen');
-        processFiles(files);
-      });
-
-    document.getElementById('downloadBtn')
-      .addEventListener('click', downloadExcel);
+    document.getElementById('downloadBtn').addEventListener('click', downloadExcel);
   </script>
 </body>
 </html>

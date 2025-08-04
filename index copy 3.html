@@ -249,34 +249,13 @@
       });
     }
 
-function downloadExcel() {
-  // 1) Asegúrate de que el array global está sincronizado
-  syncResultsGlobal();
-
-  // 2) Mapea a un nuevo array donde N, E, Elevation y ABS sean números
-  const dataNumeric = resultsGlobal.map(r => ({
-    Archivo:       r.Archivo,
-    N:             parseFloat(r.N)         || null,
-    E:             parseFloat(r.E)         || null,
-    Elevation:     parseFloat(r.Elevation) || null,
-    ABS:           parseFloat(r.ABS)       || null,
-    Stn:           r.Stn,
-    'Nombre Punto': r['Nombre Punto'],
-    Código:        r.Código,
-    STK:           r.STK
-  }));
-
-  // 3) Genera la hoja pasando raw:true
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(dataNumeric, {
-    header: ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'],
-    raw: true
-  });
-  XLSX.utils.book_append_sheet(wb, ws, 'Datos');
-
-  // 4) Escribe el archivo
-  XLSX.writeFile(wb, 'datos_extraidos.xlsx');
-}
+    function downloadExcel() {
+      syncResultsGlobal();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(resultsGlobal);
+      XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+      XLSX.writeFile(wb, 'datos_extraidos.xlsx');
+    }
 
     document.getElementById('processBtn')
       .addEventListener('click', () => {
