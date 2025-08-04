@@ -1,3 +1,4 @@
+/* main.js */
 // OCR y parseo de coordenadas en JavaScript
 function extraerDatos(texto) {
   const datos = {
@@ -11,17 +12,20 @@ function extraerDatos(texto) {
     ABS: 'NO ENCONTRADO'
   };
 
-  const patrones = {
-    N: /N\s*[:=]?\s*(\d+\.\d+)/,
-    E: /E\s*[:=]?\s*(\d+\.\d+)/,
-    Elevation: /Elevation\s*[:=]?\s*(\d+\.\d+)/,
-    Stn: /Stn[:=]?\s*([A-Za-z0-9+\-.]+)/
-  };
-  Object.entries(patrones).forEach(([k, re]) => {
-    const m = texto.match(re);
-    if (m) datos[k] = m[1];
-  });
+  // Extraer N
+  const mN = texto.match(/\bN\b\s*[:=]?\s*(\d+\.\d+)/);
+  if (mN) datos.N = mN[1];
+  
+  // Extraer Elevation
+  const mElev = texto.match(/Elevation\s*[:=]?\s*(\d+\.\d+)/i);
+  if (mElev) datos.Elevation = mElev[1];
 
+  // Extraer E sin confundir con Elevation
+  const textoSinElev = texto.replace(/Elevation\s*[:=]?\s*\d+\.\d+/gi, '');
+  const mE = textoSinElev.match(/\bE\b\s*[:=]?\s*(\d+\.\d+)/);
+  if (mE) datos.E = mE[1];
+
+  // Nombre Punto y Código
   texto.split(/\r?\n/).forEach(line => {
     if (line.includes('STK_')) {
       const parts = line.trim().split(/\s+/);
@@ -29,36 +33,35 @@ function extraerDatos(texto) {
       if (parts.length > 1) datos.Código = parts.slice(1).join(' ');
     }
   });
-
   if (datos.Código === 'NO ENCONTRADO') {
-    const lines = texto.split(/\r?\n/);
-    lines.forEach((line, i) => {
-      if (/C[oó]digo/i.test(line) && lines[i+1]) {
-        const cand = lines[i+1].trim();
-        const len = cand.split(/\s+/).length;
-        if (len > 1 && len < 6) datos.Código = cand;
+    texto.split(/\r?\n/).forEach((ln, i, arr) => {
+      if (/C[oó]digo/i.test(ln) && arr[i+1]) {
+        const c = arr[i+1].trim();
+        if (c.split(/\s+/).length > 1 && c.split(/\s+/).length < 6) datos.Código = c;
       }
     });
   }
 
+  // Combinar STK
   if (datos['Nombre Punto'] !== 'NO ENCONTRADO' || datos.Código !== 'NO ENCONTRADO') {
     datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
   }
 
+  // Función de truncado sin redondear
   const truncar = s => {
     const f = parseFloat(s);
     return isNaN(f) ? s : Math.floor(f * 100) / 100;
   };
   ['N','E','Elevation'].forEach(k => datos[k] = truncar(datos[k]));
 
+  // Ajustar Stn y calcular ABS
   const mStn = datos.Stn.match(/(.+\+)(\d+\.\d+)/);
   if (mStn) datos.Stn = mStn[1] + truncar(mStn[2]);
-
   const mAbs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
   if (mAbs) {
     const km = parseInt(mAbs[1], 10);
     const m = parseFloat(mAbs[2]);
-    const total = (km >= 0 ? 1 : -1) * (Math.abs(km) * 100 + m);
+    const total = (Math.abs(km) * 100 + m) * (km >= 0 ? 1 : -1);
     datos.ABS = Math.floor(total * 100) / 100;
   }
 
@@ -68,21 +71,17 @@ function extraerDatos(texto) {
 async function procesar() {
   const files = document.getElementById('files').files;
   const rows = [];
-  const tbody = document.querySelector('#tabla tbody');
-  tbody.innerHTML = '';
+  const tbody = document.querySelector('#tabla tbody'); tbody.innerHTML = '';
 
   for (const file of files) {
     const buffer = await file.arrayBuffer();
     const { data: { text } } = await Tesseract.recognize(buffer, 'eng');
     const d = extraerDatos(text);
     rows.push({ Archivo: file.name, ...d });
-
     const tr = document.createElement('tr');
     ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK']
       .forEach(col => {
-        const td = document.createElement('td');
-        td.textContent = rows[rows.length-1][col];
-        tr.appendChild(td);
+        const td = document.createElement('td'); td.textContent = rows.at(-1)[col]; tr.appendChild(td);
       });
     tbody.appendChild(tr);
   }
