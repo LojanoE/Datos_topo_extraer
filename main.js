@@ -12,17 +12,20 @@ function extraerDatos(texto) {
     ABS: 'NO ENCONTRADO'
   };
 
+  // Reordenamos Elevation antes de E, y usamos \b para no confundir con palabras más largas
   const patrones = {
-    N: /N\s*[:=]?\s*(\d+\.\d+)/,
-    E: /E\s*[:=]?\s*(\d+\.\d+)/,
+    N: /\bN\b\s*[:=]?\s*(\d+\.\d+)/,
     Elevation: /Elevation\s*[:=]?\s*(\d+\.\d+)/,
+    E: /\bE\b\s*[:=]?\s*(\d+\.\d+)/,
     Stn: /Stn[:=]?\s*([A-Za-z0-9+\-.]+)/
   };
+
   Object.entries(patrones).forEach(([k, re]) => {
     const m = texto.match(re);
     if (m) datos[k] = m[1];
   });
 
+  // Nombre Punto y Código
   texto.split(/\r?\n/).forEach(line => {
     if (line.includes('STK_')) {
       const parts = line.trim().split(/\s+/);
@@ -31,27 +34,32 @@ function extraerDatos(texto) {
     }
   });
 
+  // Si no se encontró Código, buscar debajo del encabezado
   if (datos.Código === 'NO ENCONTRADO') {
     const lines = texto.split(/\r?\n/);
-    lines.forEach((line, i) => {
-      if (/C[oó]digo/i.test(line) && lines[i+1]) {
-        const cand = lines[i+1].trim();
-        const len = cand.split(/\s+/).length;
-        if (len > 1 && len < 6) datos.Código = cand;
+    lines.forEach((ln, i) => {
+      if (/C[oó]digo/i.test(ln) && lines[i+1]) {
+        const c = lines[i+1].trim();
+        const cnt = c.split(/\s+/).length;
+        if (cnt > 1 && cnt < 6) datos.Código = c;
       }
     });
   }
 
+  // STK combinado
   if (datos['Nombre Punto'] !== 'NO ENCONTRADO' || datos.Código !== 'NO ENCONTRADO') {
     datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
   }
 
+  // Truncar sin redondear a dos decimales
   const truncar = s => {
     const f = parseFloat(s);
     return isNaN(f) ? s : Math.floor(f * 100) / 100;
   };
+
   ['N','E','Elevation'].forEach(k => datos[k] = truncar(datos[k]));
 
+  // Ajustar Stn y calcular ABS
   const mStn = datos.Stn.match(/(.+\+)(\d+\.\d+)/);
   if (mStn) datos.Stn = mStn[1] + truncar(mStn[2]);
 
@@ -59,7 +67,7 @@ function extraerDatos(texto) {
   if (mAbs) {
     const km = parseInt(mAbs[1], 10);
     const m = parseFloat(mAbs[2]);
-    const total = (km >= 0 ? 1 : -1) * (Math.abs(km) * 100 + m);
+    const total = (Math.abs(km) * 100 + m) * (km >= 0 ? 1 : -1);
     datos.ABS = Math.floor(total * 100) / 100;
   }
 
@@ -73,8 +81,8 @@ async function procesar() {
   tbody.innerHTML = '';
 
   for (const file of files) {
-    const buffer = await file.arrayBuffer();
-    const { data: { text } } = await Tesseract.recognize(buffer, 'eng');
+    const buf = await file.arrayBuffer();
+    const { data: { text } } = await Tesseract.recognize(buf, 'eng');
     const d = extraerDatos(text);
     rows.push({ Archivo: file.name, ...d });
 
@@ -82,7 +90,7 @@ async function procesar() {
     ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK']
       .forEach(col => {
         const td = document.createElement('td');
-        td.textContent = rows[rows.length-1][col];
+        td.textContent = rows[rows.length - 1][col];
         tr.appendChild(td);
       });
     tbody.appendChild(tr);
