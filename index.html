@@ -177,13 +177,22 @@
       if (datos['STK'] === 'NO ENCONTRADO') {
         datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
       }
-      const m_abs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
-      if (m_abs) {
-        const km = parseInt(m_abs[1], 10);
-        const m = parseFloat(m_abs[2]);
-        const total = (Math.abs(km) * 100 + m) * (km >= 0 ? 1 : -1);
-        datos.ABS = (Math.floor(total * 100) / 100).toFixed(2);
-      }
+    const m_abs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
+    if (m_abs) {
+      // 1) Capturamos la parte de kilómetros con su signo textual
+      const kmText = m_abs[1];                // e.g. "-0" o "2"
+      // 2) Valor absoluto de kilómetros
+      const kmVal   = parseInt(kmText, 10);   // -0 → 0,  2 → 2
+      const kmAbs   = Math.abs(kmVal);        //  0,      2
+      // 3) Metros dentro del kilómetro
+      const metres  = parseFloat(m_abs[2]);   // e.g. 23.7166
+      // 4) Señal real: si kmText empieza con "-" → negativo, sino positivo
+      const sign    = kmText.startsWith('-') ? -1 : 1;
+      // 5) Total en metros con signo
+      const total   = (kmAbs * 100 + metres) * sign;
+      // 6) Truncar a dos decimales hacia cero y formatear
+      datos.ABS     = (Math.trunc(total * 100) / 100).toFixed(2);
+    }
       return datos;
     }
 
