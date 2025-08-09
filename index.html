@@ -154,45 +154,73 @@
     function extractData(text) {
       const datos = {
         Archivo: '',
-        N: 'NO ENCONTRADO',
-        E: 'NO ENCONTRADO',
-        Elevation: 'NO ENCONTRADO',
-        ABS: 'NO ENCONTRADO',
-        'Nombre Punto': 'NO ENCONTRADO',
-        Código: 'NO ENCONTRADO',
-        STK: 'NO ENCONTRADO',
-        Stn: 'NO ENCONTRADO'
+        N: '-',
+        E: '-',
+        Elevation: '-',
+        ABS: '-',
+        'Nombre Punto': '-',
+        Código: '-',
+        STK: '-',
+        Stn: '-'
       };
+
+      // 1. Buscar coordenadas tipo "781742, 9602780"
+      const coordMatch = text.match(/(\d{6,}),\s*(\d{6,})/);
+      if (coordMatch) {
+        datos.E = coordMatch[1];
+        datos.N = coordMatch[2];
+      }
+
+      // 2. Buscar código en líneas con patrón esperado
+      const lines = text.split(/\r?\n/);
+      for (const line of lines) {
+        // Ignorar líneas con palabras comunes que no son código
+        if (/editar|done|save|agregar|actual|capa|layer|coordenadas|coordinates/i.test(line)) continue;
+
+        // Buscar patrón tipo "Zona 2 - M11", "M5 -", "GTM5 -gtm4"
+        const codeMatch = line.match(/([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*\s*-\s*[A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*)/);
+        if (codeMatch && codeMatch[0].trim().length > 2) {
+          datos.Código = codeMatch[0].trim();
+          break;
+        }
+      }
+
+      // 3. Si no se encontró, busca en todo el texto
+      if (datos.Código === '-') {
+        const codeMatch = text.match(/([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*\s*-\s*[A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*)/);
+        if (codeMatch && codeMatch[0].trim().length > 2) {
+          datos.Código = codeMatch[0].trim();
+        }
+      }
+
+      // 4. Patrones originales
       Object.keys(patterns).forEach(key => {
         const m = text.match(patterns[key]);
         if (m) datos[key] = truncar(m[1]);
       });
-      text.split(/\r?\n/).forEach(line => {
+
+      lines.forEach(line => {
         if (line.includes('STK_')) {
           const parts = line.trim().split(/\s+/);
           datos['Nombre Punto'] = parts[0];
           if (parts.length > 1) datos['Código'] = parts.slice(1).join(' ');
         }
       });
-      if (datos['STK'] === 'NO ENCONTRADO') {
+
+      if (datos['STK'] === '-') {
         datos.STK = `${datos['Nombre Punto']} ${datos.Código}`.trim();
       }
-    const m_abs = datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/);
-    if (m_abs) {
-      // 1) Capturamos la parte de kilómetros con su signo textual
-      const kmText = m_abs[1];                // e.g. "-0" o "2"
-      // 2) Valor absoluto de kilómetros
-      const kmVal   = parseInt(kmText, 10);   // -0 → 0,  2 → 2
-      const kmAbs   = Math.abs(kmVal);        //  0,      2
-      // 3) Metros dentro del kilómetro
-      const metres  = parseFloat(m_abs[2]);   // e.g. 23.7166
-      // 4) Señal real: si kmText empieza con "-" → negativo, sino positivo
-      const sign    = kmText.startsWith('-') ? -1 : 1;
-      // 5) Total en metros con signo
-      const total   = (kmAbs * 100 + metres) * sign;
-      // 6) Truncar a dos decimales hacia cero y formatear
-      datos.ABS     = (Math.trunc(total * 100) / 100).toFixed(2);
-    }
+
+      const m_abs = typeof datos.Stn === 'string' ? datos.Stn.match(/K([+-]?\d+)\+(\d+\.\d+)/) : null;
+      if (m_abs) {
+        const kmText = m_abs[1];
+        const kmVal   = parseInt(kmText, 10);
+        const kmAbs   = Math.abs(kmVal);
+        const metres  = parseFloat(m_abs[2]);
+        const sign    = kmText.startsWith('-') ? -1 : 1;
+        const total   = (kmAbs * 100 + metres) * sign;
+        datos.ABS     = (Math.trunc(total * 100) / 100).toFixed(2);
+      }
       return datos;
     }
 
