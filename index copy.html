@@ -122,8 +122,8 @@
     <thead>
       <tr>
         <th>Archivo</th>
-        <th>N</th>
         <th>E</th>
+        <th>N</th>
         <th>Elevation</th>
         <th>ABS</th>
         <th>Stn</th>
@@ -224,7 +224,7 @@
     function appendRow(datos) {
       const tbody = document.querySelector('#resultsTable tbody');
       const tr = document.createElement('tr');
-      ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK']
+      ['Archivo','E','N','Elevation','ABS','Stn','Nombre Punto','Código','STK']
         .forEach(key => {
           const td = document.createElement('td');
           td.innerText = datos[key] || '';
@@ -246,8 +246,8 @@
         const c = tr.querySelectorAll('td');
         return {
           Archivo:   c[0].innerText,
-          N:         c[1].innerText,
-          E:         c[2].innerText,
+          E:         c[1].innerText,
+          N:         c[2].innerText,
           Elevation: c[3].innerText,
           ABS:       c[4].innerText,
           Stn:       c[5].innerText,
@@ -265,8 +265,8 @@ function downloadExcel() {
   // 2) Mapea a un nuevo array donde N, E, Elevation y ABS sean números
   const dataNumeric = resultsGlobal.map(r => ({
     Archivo:       r.Archivo,
-    N:             parseFloat(r.N)         || null,
     E:             parseFloat(r.E)         || null,
+    N:             parseFloat(r.N)         || null,
     Elevation:     parseFloat(r.Elevation) || null,
     ABS:           parseFloat(r.ABS)       || null,
     Stn:           r.Stn,
@@ -278,7 +278,7 @@ function downloadExcel() {
   // 3) Genera la hoja pasando raw:true
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(dataNumeric, {
-    header: ['Archivo','N','E','Elevation','ABS','Stn','Nombre Punto','Código','STK'],
+    header: ['Archivo','E','N','Elevation','ABS','Stn','Nombre Punto','Código','STK'],
     raw: true
   });
   XLSX.utils.book_append_sheet(wb, ws, 'Datos');
