@@ -171,44 +171,17 @@
         datos.N = coordMatch[2];
       }
 
-      // 2. Buscar código en líneas con patrón esperado o después de "Nombre"
+      // 2. Buscar código en líneas con patrón esperado
       const lines = text.split(/\r?\n/);
-      let foundCodigo = false;
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-
-        // Si la línea es "Nombre", toma la siguiente como código si es válida
-        if (!foundCodigo && /^nombre$/i.test(line) && lines[i + 1]) {
-          const nextLine = lines[i + 1].trim();
-          if (
-            nextLine.length > 0 &&
-            !/editar|done|save|agregar|actual|capa|layer|coordenadas|coordinates|fotos|descripción|estilo|elevación/i.test(nextLine)
-          ) {
-            datos.Código = nextLine;
-            foundCodigo = true;
-            continue;
-          }
-        }
+      for (const line of lines) {
+        // Ignorar líneas con palabras comunes que no son código
+        if (/editar|done|save|agregar|actual|capa|layer|coordenadas|coordinates/i.test(line)) continue;
 
         // Buscar patrón tipo "Zona 2 - M11", "M5 -", "GTM5 -gtm4"
-        if (!foundCodigo) {
-          const codeMatch = line.match(/([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*\s*-\s*[A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*)/);
-          if (codeMatch && codeMatch[0].trim().length > 2) {
-            datos.Código = codeMatch[0].trim();
-            foundCodigo = true;
-            continue;
-          }
-        }
-
-        // También acepta nombres simples como "M5" o "Zona 6" si no hay guion
-        if (
-          !foundCodigo &&
-          /^[A-Za-z0-9\s]{2,20}$/.test(line) &&
-          !/editar|done|save|agregar|actual|capa|layer|coordenadas|coordinates|fotos|descripción|estilo|elevación/i.test(line)
-        ) {
-          datos.Código = line;
-          foundCodigo = true;
-          // No continue, por si hay un mejor match más adelante
+        const codeMatch = line.match(/([A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*\s*-\s*[A-Za-z0-9]+(?:\s+[A-Za-z0-9]+)*)/);
+        if (codeMatch && codeMatch[0].trim().length > 2) {
+          datos.Código = codeMatch[0].trim();
+          break;
         }
       }
 
@@ -250,6 +223,7 @@
       }
       return datos;
     }
+
     async function processFiles(files) {
       resultsGlobal = [];
       document.querySelector('#resultsTable tbody').innerHTML = '';
