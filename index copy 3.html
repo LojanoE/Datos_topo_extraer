@@ -203,7 +203,7 @@
         // También acepta nombres simples como "M5" o "Zona 6" si no hay guion
         if (
           !foundCodigo &&
-          /^[A-Za-z]+\d*$/.test(line) &&
+          /^[A-Za-z0-9\s]{2,20}$/.test(line) &&
           !/editar|done|save|agregar|actual|capa|layer|coordenadas|coordinates|fotos|descripción|estilo|elevación/i.test(line)
         ) {
           datos.Código = line;
